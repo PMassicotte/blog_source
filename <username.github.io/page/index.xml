@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Pages on Another R blog</title>
+    <link>/page/</link>
+    <description>Recent content in Pages on Another R blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <managingEditor>pmassicotte@hotmail.com (Philippe Massicotte)</managingEditor>
+    <webMaster>pmassicotte@hotmail.com (Philippe Massicotte)</webMaster>
+    
+	<atom:link href="/page/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>About me</title>
+      <link>/page/about/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <author>pmassicotte@hotmail.com (Philippe Massicotte)</author>
+      <guid>/page/about/</guid>
+      <description>As a numerical ecologsist, the R statistical computing language is an important part of my daily work flow. I mainly use R for environmental modeling and data manipulation. In this not-so-serious blog I will present my recent R work as well as basic tips and tricks about R.
+The unifying theme of my research is oriented toward better understanding how surrounding landscapes of aquatic ecosystems determine the biogeocycling of dissolved organic matter (DOM).</description>
+    </item>
+    
+  </channel>
+</rss>
