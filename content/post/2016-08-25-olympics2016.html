@@ -1,0 +1,203 @@
+---
+title: "Visualizating olympics medals in R"
+layout: post
+output: github_document
+---
+
+
+
+<p>Recently I have been more interested to perform web scraping to extract public data to perform data analysis. There are probably many R packages out there that do a good job at such task, but I found out that the <a href="https://cran.r-project.org/web/packages/rvest/index.html">rvest</a> was among the most popular ones. Hence I decided to give it a try.</p>
+<p>In this post, I’m using the <code>rvest</code> library to visualize how many medals were obtained by each country during the summer Olympics 2016. I thought it would be a first good exercise to get my hands around it.</p>
+<div id="extracting-data-from-web" class="section level2">
+<h2>Extracting data from web</h2>
+<p>First, let’s extract medals count information from the web. Here we are going to use data from <a href="http://www.nbcolympics.com/medals">NBC</a> website.</p>
+<pre class="r"><code>library(rvest)
+library(dplyr)
+
+url1 &lt;- &quot;http://www.nbcolympics.com/medals&quot;
+
+medals &lt;- read_html(url1) %&gt;%
+  html_nodes(&quot;table&quot;) %&gt;%
+  .[[1]] %&gt;%
+  html_table()
+
+knitr::kable(head(medals))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Place</th>
+<th align="left">Country</th>
+<th align="right">Gold</th>
+<th align="right">Silver</th>
+<th align="right">Bronze</th>
+<th align="right">Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">Norway</td>
+<td align="right">14</td>
+<td align="right">14</td>
+<td align="right">11</td>
+<td align="right">39</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="left">Germany</td>
+<td align="right">14</td>
+<td align="right">10</td>
+<td align="right">7</td>
+<td align="right">31</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="left">Canada</td>
+<td align="right">11</td>
+<td align="right">8</td>
+<td align="right">10</td>
+<td align="right">29</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="left">United States</td>
+<td align="right">9</td>
+<td align="right">8</td>
+<td align="right">6</td>
+<td align="right">23</td>
+</tr>
+<tr class="odd">
+<td align="right">5</td>
+<td align="left">Netherlands</td>
+<td align="right">8</td>
+<td align="right">6</td>
+<td align="right">6</td>
+<td align="right">20</td>
+</tr>
+<tr class="even">
+<td align="right">6</td>
+<td align="left">South Korea</td>
+<td align="right">5</td>
+<td align="right">8</td>
+<td align="right">4</td>
+<td align="right">17</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="get-country-codes-and-tidy-the-data" class="section level2">
+<h2>Get country codes and tidy the data</h2>
+<p>We are now almost ready to plot the data. I thought it would be interesting to enhance the visualization by associating each country to its flag. To do so, I first need to extract the two-characters ISO code for each country using the <a href="https://cran.r-project.org/web/packages/countrycode/index.html">countrycode</a> package. This is pretty straightforward using the <code>countrycode()</code> function. The next few lines are only used to tidy the data so it works well with <code>ggplot2</code>.</p>
+<pre class="r"><code>library(countrycode)
+library(tidyr)
+
+medals &lt;- medals %&gt;%
+  mutate(code = countrycode(Country, &quot;country.name&quot;, &quot;iso2c&quot;)) %&gt;%
+  mutate(code = tolower(code)) %&gt;%
+  gather(medal_color, count, Gold, Silver, Bronze) %&gt;%
+  mutate(medal_color = factor(medal_color, levels = c(&quot;Gold&quot;, &quot;Silver&quot;, &quot;Bronze&quot;))) %&gt;%
+  rename(country = Country) %&gt;%
+  drop_na(country, code)
+
+knitr::kable(head(medals))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Place</th>
+<th align="left">country</th>
+<th align="right">Total</th>
+<th align="left">code</th>
+<th align="left">medal_color</th>
+<th align="right">count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">Norway</td>
+<td align="right">39</td>
+<td align="left">no</td>
+<td align="left">Gold</td>
+<td align="right">14</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="left">Germany</td>
+<td align="right">31</td>
+<td align="left">de</td>
+<td align="left">Gold</td>
+<td align="right">14</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="left">Canada</td>
+<td align="right">29</td>
+<td align="left">ca</td>
+<td align="left">Gold</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="left">United States</td>
+<td align="right">23</td>
+<td align="left">us</td>
+<td align="left">Gold</td>
+<td align="right">9</td>
+</tr>
+<tr class="odd">
+<td align="right">5</td>
+<td align="left">Netherlands</td>
+<td align="right">20</td>
+<td align="left">nl</td>
+<td align="left">Gold</td>
+<td align="right">8</td>
+</tr>
+<tr class="even">
+<td align="right">6</td>
+<td align="left">South Korea</td>
+<td align="right">17</td>
+<td align="left">kr</td>
+<td align="left">Gold</td>
+<td align="right">5</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="plotting-the-data" class="section level2">
+<h2>Plotting the data</h2>
+<p>Using <code>ggplot2</code> it is easy to plot the data. Do not forget to install the <code>ggflags</code> package from Github using <code>devtools::install_github(&quot;baptiste/ggflags&quot;)</code>.</p>
+<pre class="r"><code># devtools::install_github(&quot;baptiste/ggflags&quot;)
+library(ggplot2)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;ggplot2&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     vars</code></pre>
+<pre class="r"><code>library(ggflags)
+
+medals %&gt;%
+  filter(Total &gt;= 10) %&gt;%
+  ggplot(aes(x = reorder(country, Total), y = count)) +
+  geom_bar(stat = &quot;identity&quot;, aes(fill = medal_color)) +
+  geom_flag(y = -2.5, aes(country = code), size = 10) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    hjust = 1,
+    size = 7,
+    vjust = 0.5
+  )) +
+  scale_fill_manual(values = c(
+    &quot;Gold&quot; = &quot;gold&quot;,
+    &quot;Bronze&quot; = &quot;#cd7f32&quot;,
+    &quot;Silver&quot; = &quot;#C0C0C0&quot;
+  )) +
+  scale_y_continuous(expand = c(0.1, 1)) +
+  xlab(&quot;Country&quot;) +
+  ylab(&quot;Number of medals&quot;) +
+  theme_bw() +
+  theme(legend.justification = c(1, 0), legend.position = c(1, 0)) +
+  theme(legend.title = element_blank()) +
+  coord_flip()</code></pre>
+<p><img src="/post/2016-08-25-olympics2016_files/figure-html/unnamed-chunk-3-1.png" width="768" /></p>
+<p>As simple as that!</p>
+</div>

@@ -1,0 +1,88 @@
+---
+title: "Visualizating olympics medals in R"
+layout: post
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Recently I have been more interested to perform web scraping to extract public data to perform data analysis. There are probably many R packages out there that do a good job at such task, but I found out that the [rvest](https://cran.r-project.org/web/packages/rvest/index.html) was among the most popular ones. Hence I decided to give it a try.
+
+In this post, I'm using the `rvest` library to visualize how many medals were obtained by each country during the summer Olympics 2016. I thought it would be a first good exercise to get my hands around it.
+
+## Extracting data from web
+
+First, let's extract medals count information from the web. Here we are going to use data from [NBC](http://www.nbcolympics.com/medals) website.
+
+```{r, message=FALSE}
+library(rvest)
+library(dplyr)
+
+url1 <- "http://www.nbcolympics.com/medals"
+
+medals <- read_html(url1) %>%
+  html_nodes("table") %>%
+  .[[1]] %>%
+  html_table()
+
+knitr::kable(head(medals))
+```
+
+## Get country codes and tidy the data
+
+We are now almost ready to plot the data. I thought it would be interesting to enhance the visualization by associating each country to its flag. To do so, I first need to extract the two-characters ISO code for each country using the [countrycode](https://cran.r-project.org/web/packages/countrycode/index.html) package. This is pretty straightforward using the `countrycode()` function. The next few lines are only used to tidy the data so it works well with `ggplot2`.
+
+```{r}
+library(countrycode)
+library(tidyr)
+
+medals <- medals %>%
+  mutate(code = countrycode(Country, "country.name", "iso2c")) %>%
+  mutate(code = tolower(code)) %>%
+  gather(medal_color, count, Gold, Silver, Bronze) %>%
+  mutate(medal_color = factor(medal_color, levels = c("Gold", "Silver", "Bronze"))) %>%
+  rename(country = Country) %>%
+  drop_na(country, code)
+
+knitr::kable(head(medals))
+```
+
+## Plotting the data
+
+Using `ggplot2` it is easy to plot the data. Do not forget to install the `ggflags` package from Github using `devtools::install_github("baptiste/ggflags")`.
+
+```{r, fig.width = 8, fig.height = 10}
+
+# devtools::install_github("baptiste/ggflags")
+library(ggplot2)
+library(ggflags)
+
+medals %>%
+  filter(Total >= 10) %>%
+  ggplot(aes(x = reorder(country, Total), y = count)) +
+  geom_bar(stat = "identity", aes(fill = medal_color)) +
+  geom_flag(y = -2.5, aes(country = code), size = 10) +
+  theme(axis.text.x = element_text(
+    angle = 90,
+    hjust = 1,
+    size = 7,
+    vjust = 0.5
+  )) +
+  scale_fill_manual(values = c(
+    "Gold" = "gold",
+    "Bronze" = "#cd7f32",
+    "Silver" = "#C0C0C0"
+  )) +
+  scale_y_continuous(expand = c(0.1, 1)) +
+  xlab("Country") +
+  ylab("Number of medals") +
+  theme_bw() +
+  theme(legend.justification = c(1, 0), legend.position = c(1, 0)) +
+  theme(legend.title = element_blank()) +
+  coord_flip()
+
+```
+
+As simple as that!
